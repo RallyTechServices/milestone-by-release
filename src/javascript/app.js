@@ -202,7 +202,7 @@ Ext.define("cats-milestone-by-release", {
           failure: this._showAppError,
           scope: this
       });
-      
+
     },
     _getPortfolioItemTypeOrdinal: function(recordType){
         for (var i=0; i<this.portfolioItemTypes.length; i++){
