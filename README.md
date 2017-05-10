@@ -3,7 +3,7 @@
 ## Summary/Description
 <IN PROGRESS>
 
-![screenshot](./images/screenshot.png "This is an example")
+![screenshot](./images/milestone-by-release.png "App screenshot")
 
 This app runs on a Release scoped dashboard.  
 
@@ -14,6 +14,8 @@ An Unscheduled release selection is not supported.
 Only features associated with the selected Release that have milestones in their lineage will be displayed in this app.  
 
 Features in the selected release that have stories associated with milestones are NOT considered.   
+
+<sup>1</sup>The "Feature" term in this readme represents the lowest level portfolio item, regardless of whether or not it is named "Feature".  
 
 ## Development Notes
 
