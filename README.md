@@ -15,6 +15,8 @@ Only features associated with the selected Release that have milestones in their
 
 Features in the selected release that have stories associated with milestones are NOT considered.   
 
+<sup>1</sup>The "Feature" term in this readme represents the lowest level portfolio item, regardless of whether or not it is named "Feature".  
+
 ## Development Notes
 
 
