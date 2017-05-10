@@ -192,6 +192,7 @@ Ext.define("cats-milestone-by-release", {
     _updateDisplay: function(timeboxScope){
       this.logger.log('_updateDisplay', timeboxScope.getQueryFilter());
       var filters = this._getFeatureFilters(timeboxScope);
+      this.portfolioItemRecordsByType = {};
 
       this._fetchWsapiRecords({
         model: this.portfolioItemTypes[0],
@@ -247,7 +248,8 @@ Ext.define("cats-milestone-by-release", {
         this._fetchWsapiRecords({
           model: this.portfolioItemTypes[typeIdx + 1],
           fetch: ['FormattedID','ObjectID','Name','Milestones','Parent','TargetDate'],
-          filters: filters
+          filters: filters,
+          context: {project: null}
         }).then({
             success: this._fetchAncestors,
             failure: this._showAppError,
