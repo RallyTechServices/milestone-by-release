@@ -47,9 +47,12 @@ Ext.define("cats-milestone-by-release", {
       });
     },
 
-    _clearAppMessage: function(){
+    _clearWindow: function(){
       if (this.down('#appMessage')){
         this.down('#appMessage').destroy();
+      }
+      if (this.down('rallygrid')){
+        this.down('rallygrid').destroy();
       }
     },
 
@@ -57,10 +60,16 @@ Ext.define("cats-milestone-by-release", {
         this.getContext().setTimeboxScope(timeboxScope);
         this.logger.log('onTimeboxScopeChange', timeboxScope, timeboxScope.getRecord());
 
+        this._clearWindow();
+
       if (timeboxScope && timeboxScope.getType() === 'release'){
-        this._updateDisplay(timeboxScope);
+        if (timeboxScope.getRecord()){
+          this._updateDisplay(timeboxScope);
+        } else {
+          this._addAppMessage("Please select a release to see portfolio milestones for that timebox.");
+        }
       } else {
-        this._addAppMessage("This app is designed to run on a dashboard with a Release timebox selector.")
+        this._addAppMessage("This app is designed to run on a dashboard with a Release timebox selector.");
       }
     },
 
