@@ -3,7 +3,7 @@
 ## Summary/Description
 <IN PROGRESS>
 
-![screenshot](./images/screenshot.png "This is an example")
+![screenshot](./images/milestone-by-release.png "App screenshot")
 
 This app runs on a Release scoped dashboard.  
 
