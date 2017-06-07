@@ -7,13 +7,13 @@
 
 This app runs on a Release scoped dashboard.  
 
-For all Features<sup>1</sup> explicitly associated with the selected Release, this app displays all milestones associated with the Feature<sup>1</sup> or any of it's ancestor portfolio items that have a Target Date within the selected Release boundary.  
+For all User Stories explicitly associated with the selected Release, this app displays all milestones associated with it's second level ancestor portfolio items that have a Target Date within the selected Release boundary.  
 
 An Unscheduled release selection is not supported.  
 
-Only features associated with the selected Release that have milestones in their lineage will be displayed in this app.  
+Only features<sup>1</sup> with Stories associated with the selected Release that have milestones in their lineage will be displayed in this app.  
 
-Features in the selected release that have stories associated with milestones are NOT considered.   
+Features that have stories associated with milestones are NOT considered.   
 
 <sup>1</sup>The "Feature" term in this readme represents the lowest level portfolio item, regardless of whether or not it is named "Feature".  
 

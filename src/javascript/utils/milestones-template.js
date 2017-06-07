@@ -28,8 +28,12 @@ Ext.define('cats-milestone-by-release.utils.MilestonesTemplate', {
            var colorAttr = tagData.DisplayColor ? ' style="color: ' + tagData.DisplayColor + ';"' : '';
            var iconHTML = this.iconCls ? '<span class="' + this.iconCls + '"' + colorAttr + '></span>' : '';
            var targetDate = tagData.TargetDate && Rally.util.DateTime.formatWithDefault(Rally.util.DateTime.fromIsoString(tagData.TargetDate)) || '';
-           console.log('targetDate', targetDate, tagData);
-           return '<span class="' + (this.cls ? this.cls : '') + '">' + iconHTML + tagData.Name + '<br/><b>' + targetDate + '</b></span>';
+           var name = tagData.Name;
+           if (tagData.FormattedID){
+             name = tagData.FormattedID + ': ' + tagData.Name;
+           }
+           //return '<span class="' + (this.cls ? this.cls : '') + '">' + iconHTML + tagData.Name + '<br/><b>' + targetDate + '</b></span>';
+           return '<span class="' + (this.cls ? this.cls : '') + '">' + iconHTML + name + '<br/><b>' + targetDate + '</b></span>';
        },
 
        apply: function(recordData, parent) {
@@ -40,7 +44,6 @@ Ext.define('cats-milestone-by-release.utils.MilestonesTemplate', {
        // Transform the passed in data (a record) into the shape expected by the template (a list of e.g. tags)
        _transformValues: function(recordData) {
            var items = recordData[this.collectionName];
-
            if (items._tagsNameArray) {
                items = items._tagsNameArray ? items._tagsNameArray : items;
            } else if (!_.isArray(items)) {
@@ -51,11 +54,13 @@ Ext.define('cats-milestone-by-release.utils.MilestonesTemplate', {
                    if (targetDate){
                      targetDate = Rally.util.DateTime.fromIsoString(targetDate);
                    }
+                   var name = obj.Name || obj.get('Name')
                    return {
                        _ref: obj._ref || obj.get('_ref'),
                        Name: obj.Name || obj.get('Name'),
                        TargetDate: targetDate,
-                       DisplayColor: obj.DisplayColor || obj.get('DisplayColor')
+                       DisplayColor: obj.DisplayColor || obj.get('DisplayColor'),
+                       FormattedID: obj.FormattedID 
                    };
                });
            }
