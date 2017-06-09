@@ -196,47 +196,17 @@ Ext.define("cats-milestone-by-release", {
       var milestones = [];
       if (item && item.Milestones && item.Milestones._tagsNameArray && item.Milestones._tagsNameArray.length > 0){
         Ext.Array.each(item.Milestones._tagsNameArray, function(m){
-          var targetDate = m.TargetDate && Rally.util.DateTime.fromIsoString(m.TargetDate);
-          if (targetDate >= startDate && targetDate <= endDate){
               milestones.push(m);
-          }
         });
       }
       return milestones;
 
     },
-    // _getMilestones: function(item, portfolioItemHash){
-    //   var type = item._type && item._type.toLowerCase(),
-    //       portfolioItem = portfolioItemHash[type][item.ObjectID],
-    //       releaseStartDate = this.getContext().getTimeboxScope().getRecord().get('ReleaseStartDate'),
-    //       releaseEndDate = this.getContext().getTimeboxScope().getRecord().get('ReleaseDate');
-    //
-    //   var milestones = [];
-    //
-    //   if (portfolioItem && portfolioItem.Milestones && portfolioItem.Milestones._tagsNameArray && portfolioItem.Milestones._tagsNameArray.length > 0){
-    //     Ext.Array.each(portfolioItem.Milestones._tagsNameArray, function(m){
-    //       var targetDate = m.TargetDate && Rally.util.DateTime.fromIsoString(m.TargetDate);
-    //       if (targetDate >= releaseStartDate && targetDate <= releaseEndDate){
-    //           milestones.push(m);
-    //       }
-    //     });
-    //     return milestones;
-    //   }
-    //   //
-    //   // var parent = portfolioItem && portfolioItem.Parent || null;
-    //   // if (!parent){
-    //   //   //Clean up array, sort milestones in order of target date
-    //   //   return _.uniq(milestones);
-    //   // }
-    //   // return milestones.concat(this._getMilestones(parent, portfolioItemHash));
-    //
-    // },
     _getFeatureFilters: function(timeboxScope, stories){
       var featureName = this.getFeatureName();
 
       var filters = [];
       Ext.Array.each(stories, function(s){
-        console.log('s', featureName, s.get(featureName));
         if (s.get(featureName) && s.get(featureName).ObjectID){
           filters.push({
             property: 'ObjectID',
