@@ -25,11 +25,35 @@ Ext.define("cats-milestone-by-release", {
            return;
         }
 
-        this._fetchPortfolioItemTypes().then({
-          success: this._initializeApp,
+        this.milestoneHash;
+        this._fetchMilestones().then({
+          success: function(milestones){
+            this.logger.log('_fetchmilestones success', milestones);
+            this.milestoneHash = _.reduce(milestones, function(hash, m){
+              hash["m" + m.get('ObjectID')] = m.getData();
+              return hash;
+            },{});
+            this.logger.log('milestoneHash', this.milestoneHash);
+            this._fetchPortfolioItemTypes().then({
+              success: this._initializeApp,
+              failure: this._showAppError,
+              scope: this
+            });
+          },
           failure: this._showAppError,
           scope: this
         });
+
+    },
+    _fetchMilestones: function(){
+      var filters = this.getAdditionalFilters() || [];
+      this.logger.log('_fetchMilestones', filters.toString());
+      return this._fetchWsapiRecords({
+        model: "Milestone",
+        fetch: ['Name','FormattedID','ObjectID','TargetDate','DisplayColor'],
+        filters: filters,
+        context: {project: null}
+      });
     },
     getFeatureName: function(){
         this.logger.log('getFeatureName', this.portfolioItemTypes[0]);
@@ -116,13 +140,17 @@ Ext.define("cats-milestone-by-release", {
         if (this.down('rallygrid')){
           this.down('rallygrid').destroy();
         }
-        this.add({
+        var grid = this.add({
           xtype: 'rallygrid',
           store: store,
           columnCfgs: this._getColumnCfgs(),
           showRowActionsColumn: false,
-          showPagingToolbar: false
+          showPagingToolbar: false,
+          height: this.getHeight()
         });
+
+        this.logger.log('_addGrid', this.getHeight(), grid.getHeight());
+
     },
 
     _getColumnCfgs: function(){
@@ -173,7 +201,6 @@ Ext.define("cats-milestone-by-release", {
 
                 var kids = [];
                 Ext.Object.each(portfolioItemHash[portfolioType], function(oid, pi){
-                  console.log('parent', parents, pi, pi.Parent)
                    if (Ext.Array.contains(parents, (pi.Parent && pi.Parent.ObjectID))){
                      kids.push(pi);
                    }
@@ -232,12 +259,17 @@ Ext.define("cats-milestone-by-release", {
        return this._pluckMilestones(portfolioItem, releaseStartDate, releaseEndDate);
     },
     _pluckMilestones: function(item, startDate, endDate){
-      var milestones = [];
+      var milestones = [],
+        milestoneHash = this.milestoneHash;
       if (item && item.Milestones && item.Milestones._tagsNameArray && item.Milestones._tagsNameArray.length > 0){
         Ext.Array.each(item.Milestones._tagsNameArray, function(m){
-              milestones.push(m);
+            var key = "m" + Rally.util.Ref.getOidFromRef(m._ref);
+              if (milestoneHash[key]){
+              milestones.push(milestoneHash[key]);
+            }
         });
       }
+      this.logger.log('_pluckMilestones', milestones);
       return milestones;
 
     },
@@ -369,10 +401,6 @@ Ext.define("cats-milestone-by-release", {
            filters = Rally.data.wsapi.Filter.or(filters);
        }
 
-       if (typeIdx + 1 == this.getPortfolioGroupLevel() && this.getAdditionalFilters()){
-         filters = filters.and(this.getAdditionalFilters());
-       }
-
         //If no records or we are at the top of the pi hierarchy, go ahead and build the grid with the data we have
         this._fetchWsapiRecords({
           model: this.portfolioItemTypes[typeIdx + 1],
@@ -436,7 +464,11 @@ Ext.define("cats-milestone-by-release", {
         return deferred.promise;
     },
     getSettingsFields: function(){
-      return [{ type: 'query'}];
+      return [{
+        xtype: 'container',
+        html: '<div class="no-data-container">Please enter a query for milestones below.</div>',
+        padding: 10
+      },{ type: 'query'}];
     },
     getOptions: function() {
         return [
