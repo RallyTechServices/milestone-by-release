@@ -10,7 +10,8 @@ Ext.define("cats-milestone-by-release", {
 
     config: {
       defaultSettings: {
-          groupByPortfolioLevel: 1
+          groupByPortfolioLevel: 1,
+          query: null
       }
     },
 
@@ -94,7 +95,7 @@ Ext.define("cats-milestone-by-release", {
       Ext.Object.each(portfolioItems[type], function(objectID, recData){
         var row = recData;
         row.Milestones = this._getMilestones(recData, portfolioItems);
-        row.Features = this._getFeatures(recData, portfolioItems);
+        row.Features = this._getStories(recData, portfolioItems);
         if (row.Milestones.length > 0){
           data.push(row);
         }
@@ -145,13 +146,52 @@ Ext.define("cats-milestone-by-release", {
         }
       },{
         dataIndex: 'Features',
-        text: this.getFeatureName() + 's',
+        text: 'stories',
         flex: 1,
         renderer: function(v,m,r){
           return Ext.create('cats-milestone-by-release.utils.PortfolioListTemplate', { collectionName: 'Features', iconCls: 'icon-portfolio'}).apply(r.getData());
         }
       }];
 
+    },
+    _getStories: function(item, portfolioItemHash){
+      var type = item._type && item._type.toLowerCase(),
+          portfolioItem = portfolioItemHash[type][item.ObjectID],
+          releaseStartDate = this.getContext().getTimeboxScope().getRecord().get('ReleaseStartDate'),
+          releaseEndDate = this.getContext().getTimeboxScope().getRecord().get('ReleaseDate');
+
+          var portfolioItemTypeIndex = this._getPortfolioItemTypeOrdinal(type);
+
+          var parents = [portfolioItem.ObjectID];
+
+          this.logger.log('_getStories', item.FormattedID, portfolioItemTypeIndex);
+
+          if (portfolioItemTypeIndex > 0){
+            portfolioItemTypeIndex--;
+              for (var i=portfolioItemTypeIndex; i>=0; i--){
+                portfolioType = this.portfolioItemTypes[i].toLowerCase();
+
+                var kids = [];
+                Ext.Object.each(portfolioItemHash[portfolioType], function(oid, pi){
+                  console.log('parent', parents, pi, pi.Parent)
+                   if (Ext.Array.contains(parents, (pi.Parent && pi.Parent.ObjectID))){
+                     kids.push(pi);
+                   }
+                });
+                parents = _.pluck(kids, "ObjectID");
+              }
+          }
+          var kids = [],
+            featureName = this.getFeatureName();
+
+          Ext.Object.each(portfolioItemHash.HierarchicalRequirement, function(oid, story){
+            if (Ext.Array.contains(parents, (story[featureName] && story[featureName].ObjectID))){
+              kids.push(story);
+            }
+          });
+
+          this.logger.log('_getFeatures', parents, kids);
+          return kids;
     },
     _getFeatures: function(item, portfolioItemHash){
       var type = item._type && item._type.toLowerCase(),
@@ -172,7 +212,6 @@ Ext.define("cats-milestone-by-release", {
 
                 var kids = [];
                 Ext.Object.each(portfolioItemHash[portfolioType], function(oid, pi){
-                  console.log('parent', parents, pi, pi.Parent)
                    if (Ext.Array.contains(parents, (pi.Parent && pi.Parent.ObjectID))){
                      kids.push(pi);
                    }
@@ -235,31 +274,6 @@ Ext.define("cats-milestone-by-release", {
       }
 
       return filters;
-      // var startDate = Rally.util.DateTime.toIsoString(timeboxScope.getRecord().get('ReleaseStartDate')),
-      //     endDate = Rally.util.DateTime.toIsoString(timeboxScope.getRecord().get('ReleaseDate'));
-      //
-      // properties = ["Milestones","TargetDate"];
-      //
-      // var milestoneFilters = [];
-      // Ext.Array.each(this.portfolioItemTypes, function(p){
-      //   var tempFilters = [{
-      //     property: properties.join('.'),
-      //     operator: '>=',
-      //     value: startDate
-      //   },{
-      //     property: properties.join('.'),
-      //     operator: '<=',
-      //     value: endDate
-      //   }];
-      //   milestoneFilters.push(Rally.data.wsapi.Filter.and(tempFilters));
-      //   properties.unshift("Parent");
-      // });
-      //
-      // milestoneFilters = Rally.data.wsapi.Filter.or(milestoneFilters);
-      // filters = Rally.data.wsapi.Filter.and(milestoneFilters);
-      //
-      // this.logger.log('_getFeatureFilters', filters.toString());
-      // return filters;
     },
 
     _updateDisplay: function(timeboxScope){
@@ -279,6 +293,7 @@ Ext.define("cats-milestone-by-release", {
     },
     _fetchFeatures: function(stories){
       this.logger.log('_fetchFeatures',stories);
+      this.portfolioItemRecordsByType['HierarchicalRequirement'] = _.map(stories, function(s){ return s.getData();});
 
       var filters = [],
         featureName = this.getFeatureName();
@@ -300,6 +315,7 @@ Ext.define("cats-milestone-by-release", {
         model: this.portfolioItemTypes[0],
         fetch: ['FormattedID','ObjectID','Name','Milestones','Parent','TargetDate','FormattedID'],
         filters: filters,
+        enablePostGet: true,
         context: {project: null}
       }).then({
           success: this._fetchAncestors,
@@ -315,11 +331,18 @@ Ext.define("cats-milestone-by-release", {
         }
         return i;
     },
+    getAdditionalFilters: function(){
+       if (this.getSetting('query')){
+          return Rally.data.wsapi.Filter.fromQueryString(this.getSetting('query'));
+       }
+       return null;
+    },
     _fetchAncestors: function(records){
         var typeIdx = this.portfolioItemTypes.length;
         if (records && records.length > 0){
              typeIdx = this._getPortfolioItemTypeOrdinal(records[0].get('_type'));
         }
+
        var ancestorOids = this._getUniqueParentOids(records);
        this.logger.log('_fetchAncestors', typeIdx, records,ancestorOids);
 
@@ -346,12 +369,17 @@ Ext.define("cats-milestone-by-release", {
            filters = Rally.data.wsapi.Filter.or(filters);
        }
 
+       if (typeIdx + 1 == this.getPortfolioGroupLevel() && this.getAdditionalFilters()){
+         filters = filters.and(this.getAdditionalFilters());
+       }
+
         //If no records or we are at the top of the pi hierarchy, go ahead and build the grid with the data we have
         this._fetchWsapiRecords({
           model: this.portfolioItemTypes[typeIdx + 1],
           fetch: ['FormattedID','ObjectID','Name','Milestones','Parent','TargetDate'],
           filters: filters,
-          context: {project: null}
+          context: {project: null},
+          enablePostGet: true
         }).then({
             success: this._fetchAncestors,
             failure: this._showAppError,
@@ -406,6 +434,9 @@ Ext.define("cats-milestone-by-release", {
             }
         });
         return deferred.promise;
+    },
+    getSettingsFields: function(){
+      return [{ type: 'query'}];
     },
     getOptions: function() {
         return [
