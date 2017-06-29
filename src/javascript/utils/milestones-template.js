@@ -50,23 +50,23 @@ Ext.define('cats-milestone-by-release.utils.MilestonesTemplate', {
                items = [];
            } else {
                items = _.map(items, function(obj) {
-                   var targetDate = obj.TargetDate || obj.get('TargetDate');
-                   if (targetDate){
-                     targetDate = Rally.util.DateTime.fromIsoString(targetDate);
+
+                   var targetDate = null;
+                   if (obj.TargetDate){
+                     targetDate = Rally.util.DateTime.fromIsoString(obj.TargetDate);
                    }
                    var name = obj.Name || obj.get('Name')
                    return {
                        _ref: obj._ref || obj.get('_ref'),
                        Name: obj.Name || obj.get('Name'),
                        TargetDate: targetDate,
-                       DisplayColor: obj.DisplayColor || obj.get('DisplayColor'),
-                       FormattedID: obj.FormattedID 
+                       DisplayColor: obj.DisplayColor,
+                       FormattedID: obj.FormattedID
                    };
+
                });
            }
-
            items = Rally.util.Array.sortByAttribute(items, 'TargetDate');
-
            return items;
        }
    });
